@@ -10,8 +10,8 @@
     },
     "num_samples": 100,
     "num_epochs": 1,
-    "batch_size": 4,
-    "total_duration_seconds": 19.38,
-    "average_epoch_time_seconds": 19.38,
-    "throughput_samples_per_second": 5.16
+    "batch_size": 2,
+    "total_duration_seconds": 18.93,
+    "average_epoch_time_seconds": 18.93,
+    "throughput_samples_per_second": 5.28
 }
