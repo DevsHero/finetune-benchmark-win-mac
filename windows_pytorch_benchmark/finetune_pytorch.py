@@ -1,5 +1,6 @@
 import time
 import json
+import os
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForLanguageModeling
 from datasets import load_dataset
@@ -10,13 +11,14 @@ import re
 # --- Configuration ---
 # Set to "fast" for a quick test run, or "full" for a complete fine-tuning.
 TUNING_MODE = "fast" # Options: "fast", "full"
-FAST_TUNE_SAMPLES = 1000 # Number of samples for the "fast" tuning mode - optimized for RTX 5060 Ti
+FAST_TUNE_SAMPLES = 100 # Increased for meaningful benchmarking on RTX 5060 Ti
 
-MODEL_NAME = "Qwen/Qwen3-8B"  # Qwen3-8B model for RTX 5060 Ti
+MODEL_NAME = "Qwen/Qwen3-0.6B"  # Qwen3-0.6B optimized for RTX 5060 Ti
 DATASET_NAME = "databricks/databricks-dolly-15k"
 NUM_EPOCHS = 1
-BATCH_SIZE = 2 # Reduced batch size for Qwen3-8B on RTX 5060 Ti
-MAX_SEQ_LENGTH = 512  # Optimized for RTX 5060 Ti with DialoGPT
+BATCH_SIZE = 4 # Optimized batch size for better GPU utilization on RTX 5060 Ti
+GRADIENT_ACCUMULATION_STEPS = 2 # Effective batch size = 16 for optimal performance
+MAX_SEQ_LENGTH = 512  # Optimized sequence length for RTX 5060 Ti
 
 def get_windows_specs():
     """Gets Windows hardware and software specifications with detailed GPU info."""
@@ -77,6 +79,9 @@ def format_prompt(sample):
 {sample['response']}<|end|>"""
 
 def main():
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
     print("Starting Windows PyTorch Fine-Tuning Benchmark...")
     print(f"Model: {MODEL_NAME}")
     print(f"Dataset: {DATASET_NAME}")
@@ -91,11 +96,11 @@ def main():
         exit()
     print(f"Using GPU: {torch.cuda.get_device_name(0)}")
 
-    # Optimized for RTX 5060 Ti 16GB with FP16 precision
+    # Optimized for RTX 5060 Ti 16GB with BF16 precision for stability
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME, 
         device_map="cuda", # Explicitly use the GPU
-        torch_dtype=torch.float16  # Using FP16 for RTX 5060 Ti optimization
+        torch_dtype=torch.bfloat16  # Using BF16 for better stability on RTX 5060 Ti
     )
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     if tokenizer.pad_token is None:
@@ -149,14 +154,17 @@ def main():
         per_device_train_batch_size=BATCH_SIZE,
         logging_dir='./logs',
         logging_steps=10,
-        learning_rate=2e-5,
-        fp16=True,  # Enabled FP16 for RTX 5060 Ti optimization
-        bf16=False,
-        gradient_accumulation_steps=4,  # Increased for smaller batch size
-        dataloader_num_workers=4,  # Optimize data loading
+        learning_rate=3e-5,  # Slightly higher learning rate for smaller models
+        fp16=False,  # Disable FP16 to avoid gradient scaling issues
+        bf16=True,   # Enable BF16 for RTX 5060 Ti optimization
+        gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
+        dataloader_pin_memory=True,  # Faster data transfer on RTX 5060 Ti
+        gradient_checkpointing=True,  # Enable gradient checkpointing to save memory
+        dataloader_num_workers=0,  # Set to 0 for Windows compatibility
         remove_unused_columns=False,
         optim="adamw_torch_fused",  # Optimized optimizer for NVIDIA GPUs
-        warmup_steps=50,  # Add warmup for stability
+        max_grad_norm=1.0,  # Gradient clipping for stability
+        warmup_ratio=0.1,  # Better warmup strategy than fixed steps
         save_strategy="no",  # Disable saving to focus on performance
         report_to="none", # Disable wandb/tensorboard reporting for this benchmark
     )
@@ -199,10 +207,11 @@ def main():
         "throughput_samples_per_second": round(samples_per_second, 2),
     }
 
-    with open("benchmark_summary.json", "w") as f:
+    summary_path = os.path.join(script_dir, "benchmark_summary.json")
+    with open(summary_path, "w") as f:
         json.dump(summary, f, indent=4)
 
-    print("Benchmark summary saved to benchmark_summary.json")
+    print(f"Benchmark summary saved to {summary_path}")
     print("\n--- Benchmark Finished ---")
 
 if __name__ == "__main__":

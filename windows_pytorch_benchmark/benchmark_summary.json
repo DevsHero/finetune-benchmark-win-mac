@@ -1,6 +1,6 @@
 {
     "platform": "windows_pytorch",
-    "model": "microsoft/DialoGPT-medium",
+    "model": "Qwen/Qwen3-0.6B",
     "dataset": "databricks/databricks-dolly-15k",
     "device_specs": {
         "os_version": "Microsoft Windows 11 Pro",
@@ -14,8 +14,8 @@
     },
     "num_samples": 100,
     "num_epochs": 1,
-    "batch_size": 1,
-    "total_duration_seconds": 24.09,
-    "average_epoch_time_seconds": 24.09,
-    "throughput_samples_per_second": 4.15
+    "batch_size": 4,
+    "total_duration_seconds": 13.33,
+    "average_epoch_time_seconds": 13.33,
+    "throughput_samples_per_second": 7.5
 }

@@ -1,8 +1,8 @@
-torch==2.7.1
-transformers==4.41.2
+torch>=2.1.0
+transformers>=4.51.0
 datasets
-accelerate==0.31.0
+accelerate>=0.34.0
 bitsandbytes
 tqdm
 huggingface_hub
-scipy
+scipys
