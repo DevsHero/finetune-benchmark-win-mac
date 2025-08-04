@@ -1,0 +1,6 @@
+mlx
+mlx-lm
+numpy
+datasets
+tqdm
+huggingface_hub
