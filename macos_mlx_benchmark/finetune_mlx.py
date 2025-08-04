@@ -12,13 +12,13 @@ import subprocess
 # --- Configuration ---
 # Set to "fast" for a quick test run, or "full" for a complete fine-tuning.
 TUNING_MODE = "fast" # Options: "fast", "full"
-FAST_TUNE_SAMPLES = 1000 # Number of samples for the "fast" tuning mode
+FAST_TUNE_SAMPLES = 100 # Number of samples for the "fast" tuning mode
 
-MODEL_NAME = "mlx-community/Qwen3-8B-bf16"
+MODEL_NAME = "mlx-community/Qwen3-0.6B-bf16"
 DATASET_NAME = "databricks/databricks-dolly-15k"
 NUM_EPOCHS = 1
-BATCH_SIZE = 1 
-MAX_SEQ_LENGTH = 4096
+BATCH_SIZE = 2 
+MAX_SEQ_LENGTH = 512
 
 def get_mac_specs():
     """Gets macOS hardware and software specifications with robust parsing."""
@@ -80,10 +80,7 @@ def main():
 
     # 1. Load Model and Tokenizer
     print("\n1. Loading model and tokenizer...")
-    model_load_start = time.time()
     model, tokenizer = load(MODEL_NAME)
-    model_load_time = time.time() - model_load_start
-    print(f"Model loading completed in {model_load_time:.2f}s.")
     
     # Freeze all layers first
     model.freeze()
@@ -91,7 +88,13 @@ def main():
     # For this benchmark, we'll fine-tune the last attention block and the output layer
     for i in range(len(model.model.layers) - 4, len(model.model.layers)):
         model.model.layers[i].unfreeze()
-    model.lm_head.unfreeze()
+    
+    # Unfreeze the output layer (either lm_head or tied embeddings)
+    if hasattr(model, 'lm_head'):
+        model.lm_head.unfreeze()
+    else:
+        # Model uses tied embeddings, so unfreeze the embedding layer
+        model.model.embed_tokens.unfreeze()
 
     # 2. Load and Prepare Dataset
     print("\n2. Loading and preparing dataset...")
@@ -120,9 +123,8 @@ def main():
     optimizer = optim.Adam(learning_rate=1e-5)
 
     # 4. Fine-Tuning Loop
-    # Start fine-tuning - BEGIN BENCHMARK TIMING
     print("\n3. Starting fine-tuning...")
-    start_time = time.time()  # Start timing here for benchmark accuracy
+    start_time = time.time()
     epoch_times = []
 
     for epoch in range(NUM_EPOCHS):

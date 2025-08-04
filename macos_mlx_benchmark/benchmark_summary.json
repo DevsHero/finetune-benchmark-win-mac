@@ -1,6 +1,6 @@
 {
     "platform": "macos_mlx",
-    "model": "microsoft/phi-3-mini-4k-instruct",
+    "model": "mlx-community/Qwen3-0.6B-bf16",
     "dataset": "databricks/databricks-dolly-15k",
     "device_specs": {
         "os_version": "macOS 15.5 (24F74)",
@@ -10,8 +10,8 @@
     },
     "num_samples": 100,
     "num_epochs": 1,
-    "batch_size": 1,
-    "total_duration_seconds": 58.3,
-    "average_epoch_time_seconds": 58.3,
-    "throughput_samples_per_second": 1.72
+    "batch_size": 4,
+    "total_duration_seconds": 19.38,
+    "average_epoch_time_seconds": 19.38,
+    "throughput_samples_per_second": 5.16
 }
