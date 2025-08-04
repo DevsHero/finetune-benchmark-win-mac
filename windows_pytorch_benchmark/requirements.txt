@@ -1,7 +1,7 @@
-torch
-transformers
+torch==2.7.1
+transformers==4.41.2
 datasets
-accelerate
+accelerate==0.31.0
 bitsandbytes
 tqdm
 huggingface_hub

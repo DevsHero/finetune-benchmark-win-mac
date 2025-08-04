@@ -1,0 +1,21 @@
+{
+    "platform": "windows_pytorch",
+    "model": "microsoft/DialoGPT-medium",
+    "dataset": "databricks/databricks-dolly-15k",
+    "device_specs": {
+        "os_version": "Microsoft Windows 11 Pro",
+        "processor": "1 Processor(s) Installed.",
+        "memory": "65,134 MB",
+        "gpu": {
+            "name": "NVIDIA GeForce RTX 5060 Ti",
+            "driver_version": "577.00",
+            "total_memory": "16311 MiB"
+        }
+    },
+    "num_samples": 100,
+    "num_epochs": 1,
+    "batch_size": 1,
+    "total_duration_seconds": 24.09,
+    "average_epoch_time_seconds": 24.09,
+    "throughput_samples_per_second": 4.15
+}

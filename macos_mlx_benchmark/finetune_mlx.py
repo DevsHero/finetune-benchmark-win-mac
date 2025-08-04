@@ -12,13 +12,13 @@ import subprocess
 # --- Configuration ---
 # Set to "fast" for a quick test run, or "full" for a complete fine-tuning.
 TUNING_MODE = "fast" # Options: "fast", "full"
-FAST_TUNE_SAMPLES = 100 # Number of samples for the "fast" tuning mode
+FAST_TUNE_SAMPLES = 1000 # Number of samples for the "fast" tuning mode
 
-MODEL_NAME = "microsoft/phi-3-mini-4k-instruct"
+MODEL_NAME = "mlx-community/Qwen3-8B-bf16"
 DATASET_NAME = "databricks/databricks-dolly-15k"
 NUM_EPOCHS = 1
 BATCH_SIZE = 1 
-MAX_SEQ_LENGTH = 2048
+MAX_SEQ_LENGTH = 4096
 
 def get_mac_specs():
     """Gets macOS hardware and software specifications with robust parsing."""
@@ -80,7 +80,10 @@ def main():
 
     # 1. Load Model and Tokenizer
     print("\n1. Loading model and tokenizer...")
+    model_load_start = time.time()
     model, tokenizer = load(MODEL_NAME)
+    model_load_time = time.time() - model_load_start
+    print(f"Model loading completed in {model_load_time:.2f}s.")
     
     # Freeze all layers first
     model.freeze()
@@ -117,8 +120,9 @@ def main():
     optimizer = optim.Adam(learning_rate=1e-5)
 
     # 4. Fine-Tuning Loop
+    # Start fine-tuning - BEGIN BENCHMARK TIMING
     print("\n3. Starting fine-tuning...")
-    start_time = time.time()
+    start_time = time.time()  # Start timing here for benchmark accuracy
     epoch_times = []
 
     for epoch in range(NUM_EPOCHS):

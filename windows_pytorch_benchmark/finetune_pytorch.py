@@ -10,44 +10,63 @@ import re
 # --- Configuration ---
 # Set to "fast" for a quick test run, or "full" for a complete fine-tuning.
 TUNING_MODE = "fast" # Options: "fast", "full"
-FAST_TUNE_SAMPLES = 100 # Number of samples for the "fast" tuning mode
+FAST_TUNE_SAMPLES = 1000 # Number of samples for the "fast" tuning mode - optimized for RTX 5060 Ti
 
-MODEL_NAME = "microsoft/phi-3-mini-4k-instruct"
+MODEL_NAME = "Qwen/Qwen3-8B"  # Qwen3-8B model for RTX 5060 Ti
 DATASET_NAME = "databricks/databricks-dolly-15k"
 NUM_EPOCHS = 1
-BATCH_SIZE = 1 # Per device
-MAX_SEQ_LENGTH = 2048
+BATCH_SIZE = 2 # Reduced batch size for Qwen3-8B on RTX 5060 Ti
+MAX_SEQ_LENGTH = 512  # Optimized for RTX 5060 Ti with DialoGPT
 
 def get_windows_specs():
-    """Gets Windows hardware and software specifications."""
+    """Gets Windows hardware and software specifications with detailed GPU info."""
+    specs = {
+        "os_version": "Unknown",
+        "processor": "Unknown",
+        "memory": "Unknown",
+        "gpu": "Unknown"
+    }
     try:
-        # Get OS and hardware info
+        # Get OS and hardware info from systeminfo
         sysinfo = subprocess.check_output(['systeminfo'], text=True)
-        os_name = re.search(r'OS Name:\s*(.*)', sysinfo).group(1).strip()
-        os_version = re.search(r'OS Version:\s*(.*)', sysinfo).group(1).strip()
-        total_memory = re.search(r'Total Physical Memory:\s*(.*)', sysinfo).group(1).strip()
-        processor = re.search(r'Processor\(s\):\s*(.*)', sysinfo).group(1).strip()
+        os_search = re.search(r'OS Name:\s*(.*)', sysinfo)
+        if os_search:
+            specs["os_version"] = os_search.group(1).strip()
+        
+        mem_search = re.search(r'Total Physical Memory:\s*(.*)', sysinfo)
+        if mem_search:
+            specs["memory"] = mem_search.group(1).strip()
 
-        # Get GPU info
-        gpu_info = subprocess.check_output(['wmic', 'path', 'win32_videocontroller', 'get', 'name'], text=True)
-        gpu_name = gpu_info.split('\n')[1].strip()
+        proc_search = re.search(r'Processor\(s\):\s*(.*)', sysinfo)
+        if proc_search:
+            specs["processor"] = proc_search.group(1).strip()
 
-        return {
-            "os_name": os_name,
-            "os_version": os_version,
-            "processor": processor,
-            "memory": total_memory,
-            "gpu": gpu_name
-        }
-    except (subprocess.CalledProcessError, AttributeError, IndexError) as e:
-        print(f"Error getting Windows specs: {e}")
-        return {
-            "os_name": "Unknown",
-            "os_version": "Unknown",
-            "processor": "Unknown",
-            "memory": "Unknown",
-            "gpu": "Unknown"
-        }
+    except (subprocess.CalledProcessError, AttributeError) as e:
+        print(f"Error getting basic system specs: {e}")
+
+    try:
+        # Get detailed GPU info using nvidia-smi for NVIDIA GPUs
+        if torch.cuda.is_available() and 'nvidia' in torch.cuda.get_device_name(0).lower():
+            nvsmi_output = subprocess.check_output(
+                ['nvidia-smi', '--query-gpu=name,driver_version,memory.total', '--format=csv,noheader,nounits'],
+                text=True
+            )
+            gpu_info = nvsmi_output.strip().split(',')
+            specs['gpu'] = {
+                "name": gpu_info[0].strip(),
+                "driver_version": gpu_info[1].strip(),
+                "total_memory": f"{gpu_info[2].strip()} MiB"
+            }
+        else: # Fallback for non-NVIDIA GPUs
+            gpu_info = subprocess.check_output(['wmic', 'path', 'win32_videocontroller', 'get', 'name'], text=True)
+            specs['gpu'] = gpu_info.split('\n')[1].strip()
+
+    except (subprocess.CalledProcessError, IndexError) as e:
+        print(f"Error getting GPU specs: {e}")
+        specs['gpu'] = "Unknown (error fetching)"
+
+    return specs
+
 
 def format_prompt(sample):
     # Reformat the dataset into a conversational format for fine-tuning
@@ -64,14 +83,21 @@ def main():
 
     # 1. Load Model and Tokenizer
     print("\n1. Loading model and tokenizer...")
-    # Note: bfloat16 is recommended for Ampere and newer GPUs
+    model_load_start = time.time()
+
+    # Check for CUDA GPU and exit if not available
+    if not torch.cuda.is_available():
+        print("Error: No CUDA-enabled GPU found. This script requires a GPU.")
+        exit()
+    print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+
+    # Optimized for RTX 5060 Ti 16GB with FP16 precision
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME, 
-        torch_dtype=torch.bfloat16, 
-        device_map="auto", # Automatically use the GPU
-        trust_remote_code=True
+        device_map="cuda", # Explicitly use the GPU
+        torch_dtype=torch.float16  # Using FP16 for RTX 5060 Ti optimization
     )
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -92,11 +118,28 @@ def main():
     
     formatted_dataset = dataset.map(lambda x: {"text": format_prompt(x)})
     
-    def tokenize_function(examples):
-        return tokenizer(examples["text"], truncation=True, max_length=MAX_SEQ_LENGTH, padding="max_length")
+    def tokenize_function(example):
+        # Simple single example tokenization
+        text = example["text"]
+        
+        # Tokenize the text
+        tokens = tokenizer(
+            text,
+            truncation=True,
+            max_length=MAX_SEQ_LENGTH,
+            padding="max_length",
+            return_tensors=None
+        )
+        
+        # Set labels for causal language modeling
+        tokens["labels"] = tokens["input_ids"].copy()
+        return tokens
 
-    tokenized_dataset = formatted_dataset.map(tokenize_function, batched=True, remove_columns=dataset.column_names)
+    tokenized_dataset = formatted_dataset.map(tokenize_function, remove_columns=dataset.column_names)
 
+    model_load_time = time.time() - model_load_start
+    print(f"Model loading completed in {model_load_time:.2f}s.")
+    
     # 3. Fine-Tuning with Trainer API
     print("\n3. Starting fine-tuning...")
     
@@ -107,13 +150,20 @@ def main():
         logging_dir='./logs',
         logging_steps=10,
         learning_rate=2e-5,
-        fp16=False, # bfloat16 is used instead
-        bf16=True,
-        gradient_accumulation_steps=4,
+        fp16=True,  # Enabled FP16 for RTX 5060 Ti optimization
+        bf16=False,
+        gradient_accumulation_steps=4,  # Increased for smaller batch size
+        dataloader_num_workers=4,  # Optimize data loading
+        remove_unused_columns=False,
+        optim="adamw_torch_fused",  # Optimized optimizer for NVIDIA GPUs
+        warmup_steps=50,  # Add warmup for stability
+        save_strategy="no",  # Disable saving to focus on performance
         report_to="none", # Disable wandb/tensorboard reporting for this benchmark
     )
 
-    data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
+    # Use default data collator to avoid tokenization issues
+    from transformers import default_data_collator
+    data_collator = default_data_collator
 
     trainer = Trainer(
         model=model,
@@ -122,6 +172,7 @@ def main():
         data_collator=data_collator,
     )
 
+    # Start benchmark timing here (excluding model loading)
     start_time = time.time()
     trainer.train()
     end_time = time.time()
