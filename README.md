@@ -119,10 +119,10 @@ Based on recent runs, here are example performance metrics:
 - **Total Time:** ~18.93 seconds (100 samples)
 - **Memory:** Efficient unified memory usage
 
-### Windows PyTorch (RTX 5060 Ti, 16GB VRAM)
+### Windows PyTorch (Ryzen5 8400f, RTX 5060 Ti, 16GB VRAM)
 - **Model:** `Qwen/Qwen3-0.6B`
 - **Throughput:** ~7.5 samples/second
-- **Total Time:** ~133.28 seconds (1000 samples)
+- **Total Time:** ~133.28 seconds (100 samples)
 - **Configuration:** BF16 precision, batch size 4, gradient accumulation
 
 ## Key Features
