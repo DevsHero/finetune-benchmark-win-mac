@@ -113,7 +113,7 @@ After each script finishes, it will save a `benchmark_summary.json` file in its 
 
 Based on recent runs, here are example performance metrics:
 
-### macOS MLX (M4 Pro,20 GPU, 24GB RAM)
+### macOS MLX (M4 Pro, 20 GPU, 24GB RAM)
 - **Model:** `mlx-community/Qwen3-0.6B-bf16`
 - **Throughput:** ~5.28 samples/second
 - **Total Time:** ~18.93 seconds (100 samples)
