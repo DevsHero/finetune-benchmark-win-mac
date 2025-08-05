@@ -8,6 +8,21 @@ This project provides a standardized benchmark for fine-tuning small language mo
 2.  **Windows (NVIDIA GPU):** Using PyTorch with `Qwen/Qwen3-0.6B` and CUDA acceleration.
 
 The primary goal is to offer a clear, reproducible comparison of fine-tuning performance, helping developers and researchers understand the trade-offs between these two popular setups. The benchmarks measure key metrics like total training time, throughput, and hardware utilization.
+## Current Benchmark Results
+
+Based on recent runs, here are example performance metrics:
+
+### macOS MLX (M4 Pro, 20 GPU, 24GB RAM)
+- **Model:** `mlx-community/Qwen3-0.6B-bf16`
+- **Throughput:** ~5.28 samples/second
+- **Total Time:** ~18.93 seconds (100 samples)
+- **Memory:** Efficient unified memory usage
+
+### Windows PyTorch (Ryzen5 8400f, RTX 5060 Ti, 16GB VRAM)
+- **Model:** `Qwen/Qwen3-0.6B`
+- **Throughput:** ~7.5 samples/second
+- **Total Time:** ~13.33 seconds (100 samples)
+- **Configuration:** BF16 precision, batch size 4, gradient accumulation
 
 ## Benchmark Details
 
@@ -109,21 +124,6 @@ python finetune_pytorch.py
 
 After each script finishes, it will save a `benchmark_summary.json` file in its respective directory. This file contains detailed performance metrics and hardware specifications, allowing for a direct comparison between the two platforms.
 
-## Current Benchmark Results
-
-Based on recent runs, here are example performance metrics:
-
-### macOS MLX (M4 Pro, 20 GPU, 24GB RAM)
-- **Model:** `mlx-community/Qwen3-0.6B-bf16`
-- **Throughput:** ~5.28 samples/second
-- **Total Time:** ~18.93 seconds (100 samples)
-- **Memory:** Efficient unified memory usage
-
-### Windows PyTorch (Ryzen5 8400f, RTX 5060 Ti, 16GB VRAM)
-- **Model:** `Qwen/Qwen3-0.6B`
-- **Throughput:** ~7.5 samples/second
-- **Total Time:** ~13.33 seconds (100 samples)
-- **Configuration:** BF16 precision, batch size 4, gradient accumulation
 
 ## Key Features
 
