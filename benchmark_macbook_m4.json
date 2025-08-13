@@ -1,0 +1,17 @@
+{
+    "platform": "macos_mlx",
+    "model": "mlx-community/Qwen3-0.6B-bf16",
+    "dataset": "databricks/databricks-dolly-15k",
+    "device_specs": {
+        "os_version": "macOS 15.5 (24F74)",
+        "chip": "Apple M4 Pro",
+        "memory": "24 GB",
+        "gpu": "Metal 3"
+    },
+    "num_samples": 100,
+    "num_epochs": 1,
+    "batch_size": 2,
+    "total_duration_seconds": 18.93,
+    "average_epoch_time_seconds": 18.93,
+    "throughput_samples_per_second": 5.28
+}
