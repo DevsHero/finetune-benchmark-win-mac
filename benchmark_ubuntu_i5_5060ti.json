@@ -1,0 +1,21 @@
+{
+    "platform": "ubuntu_pytorch",
+    "model": "Qwen/Qwen3-0.6B",
+    "dataset": "databricks/databricks-dolly-15k",
+    "device_specs": {
+        "os_version": "Ubuntu 24.04.3 LTS",
+        "processor": "12x 12th Gen Intel(R) Core(TM) i5-12400",
+        "memory": "31.11 GB",
+        "gpu": {
+            "name": "NVIDIA GeForce RTX 5060 Ti",
+            "driver_version": "580.95.05",
+            "total_memory": "16311 MiB"
+        }
+    },
+    "num_samples": 100,
+    "num_epochs": 1,
+    "batch_size": 4,
+    "total_duration_seconds": 12.17,
+    "average_epoch_time_seconds": 12.17,
+    "throughput_samples_per_second": 8.21
+}

@@ -1,11 +1,12 @@
-# Fine-Tuning Performance Benchmark: macOS (MLX) vs. Windows (PyTorch)
+# Fine-Tuning Performance Benchmark: macOS (MLX) vs. Windows (PyTorch) vs. Ubuntu (PyTorch)
 
 ## Project Overview
 
-This project provides a standardized benchmark for fine-tuning small language models on two distinct platforms:
+This project provides a standardized benchmark for fine-tuning small language models on three distinct platforms:
 
 1.  **macOS (Apple Silicon):** Using the MLX framework with `mlx-community/Qwen3-0.6B-bf16`, optimized for Apple's unified memory architecture.
 2.  **Windows (NVIDIA GPU):** Using PyTorch with `Qwen/Qwen3-0.6B` and CUDA acceleration.
+3.  **Ubuntu (NVIDIA GPU):** Using PyTorch with `Qwen/Qwen3-0.6B` and CUDA acceleration on Linux.
 
 The primary goal is to offer a clear, reproducible comparison of fine-tuning performance, helping developers and researchers understand the trade-offs between these two popular setups. The benchmarks measure key metrics like total training time, throughput, and hardware utilization.
 ## Current Benchmark Results
@@ -18,17 +19,44 @@ Based on recent runs, here are example performance metrics:
 - **Total Time:** ~18.93 seconds (100 samples)
 - **Memory:** Efficient unified memory usage
 
-### PC Windows PyTorch (Ryzen5 8400f, RTX 5060 Ti, 16GB VRAM)
+### PC Windows PyTorch (Ryzen5 8400f, RTX 5060 Ti 16GB VRAM)
 - **Model:** `Qwen/Qwen3-0.6B`
 - **Throughput:** ~7.5 samples/second
 - **Total Time:** ~13.33 seconds (100 samples)
 - **Configuration:** BF16 precision, batch size 4, gradient accumulation
 
-### MSI Laptop Windows PyTorch (ultra 275hx, RTX 5080, 16GB VRAM)
+### MSI Laptop Windows PyTorch (ultra 275hx, RTX 5080 16GB VRAM)
 - **Model:** `Qwen/Qwen3-0.6B`
 - **Throughput:** ~11.16 samples/second
 - **Total Time:** ~8.96 seconds (100 samples)
 - **Configuration:** BF16 precision, batch size 4, gradient accumulation
+
+### PC Ubuntu PyTorch (Intel i5-12400, RTX 5060 Ti 16GB RAM)
+- **Model:** `Qwen/Qwen3-0.6B`
+- **Throughput:** ~8.21 samples/second
+- **Total Time:** ~12.17 seconds (100 samples)
+- **Configuration:** BF16 precision, batch size 4, gradient accumulation
+- **OS:** Ubuntu 24.04.3 LTS
+- **GPU Driver:** 580.95.05
+
+### Ubuntu PyTorch (Intel i5-12400, RTX 3090, 31GB RAM)
+- **Model:** `Qwen/Qwen3-0.6B`
+- **Throughput:** ~10.67 samples/second
+- **Total Time:** ~9.37 seconds (100 samples)
+- **Configuration:** BF16 precision, batch size 4, gradient accumulation
+- **OS:** Ubuntu 24.04.3 LTS
+- **GPU Driver:** 580.95.05
+- **GPU Memory:** 24GB
+
+### Ubuntu PyTorch (Intel i5-12400, RTX 4080 Super, 31GB RAM)
+- **Model:** `Qwen/Qwen3-0.6B`
+- **Throughput:** ~15.92 samples/second
+- **Total Time:** ~6.28 seconds (100 samples)
+- **Configuration:** BF16 precision, batch size 4, gradient accumulation
+- **OS:** Ubuntu 24.04.3 LTS
+- **GPU Driver:** 580.95.05
+- **GPU Memory:** 16GB
+
 ## Benchmark Details
 
 -   **Base Models:** 
@@ -71,6 +99,13 @@ Both benchmark scripts can be run in one of two modes, controlled by the `TUNING
 - Batch size: 4, Gradient accumulation: 2 (effective batch size 8)
 - Optimized for NVIDIA RTX GPUs with fused AdamW optimizer
 - Gradient checkpointing enabled for memory efficiency
+
+**Ubuntu PyTorch:**
+- Uses `Qwen/Qwen3-0.6B` with BF16 precision
+- Batch size: 4, Gradient accumulation: 2 (effective batch size 8)
+- Optimized for NVIDIA RTX GPUs with fused AdamW optimizer
+- Gradient checkpointing enabled for memory efficiency
+- Data loading optimized for Linux with 4 workers
 
 ## Instructions
 
@@ -124,6 +159,32 @@ python finetune_pytorch.py
 ```
 
 **Note:** Ensure you have CUDA-compatible PyTorch installed and an NVIDIA GPU available. The script includes optimizations for RTX series GPUs.
+
+### 3. Ubuntu (PyTorch) Benchmark
+
+**Environment Setup:**
+
+```bash
+# Navigate to the Ubuntu directory
+cd ubuntu_pytorch_benchmark
+
+# Create and activate a Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install the required packages
+# Ensure you have a compatible PyTorch version with CUDA support
+pip install -r requirements.txt
+```
+
+**Running the Benchmark:**
+
+```bash
+# This will run the script and generate the benchmark summary
+python finetune_pytorch.py
+```
+
+**Note:** Ensure you have CUDA-compatible PyTorch installed and an NVIDIA GPU available. The script includes optimizations for RTX series GPUs and Linux-specific data loading optimizations.
 
 ## Collecting Results
 
