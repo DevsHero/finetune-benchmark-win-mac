@@ -57,6 +57,15 @@ Based on recent runs, here are example performance metrics:
 - **GPU Driver:** 580.95.05
 - **GPU Memory:** 16GB
 
+### Ubuntu PyTorch (Intel i5-12400, RTX 4070 Ti Super, 31GB RAM)
+- **Model:** `Qwen/Qwen3-0.6B`
+- **Throughput:** ~14.33 samples/second
+- **Total Time:** ~6.98 seconds (100 samples)
+- **Configuration:** BF16 precision, batch size 4, gradient accumulation
+- **OS:** Ubuntu 24.04.3 LTS
+- **GPU Driver:** 580.95.05
+- **GPU Memory:** 16GB
+
 ## Benchmark Details
 
 -   **Base Models:** 
